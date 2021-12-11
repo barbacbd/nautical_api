@@ -1,0 +1,2 @@
+include nautical_api/*.mysql
+include nautical_api/*.json
