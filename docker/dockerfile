@@ -1,0 +1,30 @@
+FROM centos:centos7.6.1810
+LABEL maintainer="barbacbd@dukes.jmu.edu"
+
+# expose the ports for elastic search
+# technically HTTP is a TCP port, but we can expose both
+EXPOSE 9200/udp
+EXPOSE 9200/tcp
+# expose the ports for the API
+# technically HTTP is a TCP port, but we can expose both
+EXPOSE 6200/udp
+EXPOSE 6200/tcp
+
+
+# make cache based on the current repo information
+RUN yum makecache;
+
+# Install the dependencies
+RUN yum install -y java-1.8.0-openjdk python36-devel python36-setuptools python36-pip nano wget emacs nano vim;
+
+# Grab the elastic search 
+RUN wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.9.2-x86_64.rpm;
+# install the file that was downloaded
+RUN rpm -ivh elasticsearch-7.9.2-x86_64.rpm;
+
+RUN systemctl enable elasticsearch.service;
+
+# Copy the Local files over to set the elastic search data
+COPY ./elasticsearch.yml /etc/elasticsearch;
+COPY ./jvm.options /etc/elasticsearch;
+
