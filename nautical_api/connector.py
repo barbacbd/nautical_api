@@ -12,9 +12,10 @@ from elasticsearch import Elasticsearch
 from json import dumps
 from pprint import pprint
 from typing import List, Dict
-
+from datetime import datetime
 
 SOURCE_INDEX = "source_index"
+BUOY_INDEX = "buoy_index"
 
 
 def _pull_sources_wrapper() -> Dict[str, List[str]]:
@@ -59,12 +60,6 @@ def add_sources_to_db(es: Elasticsearch, source_data: Dict[str, List[str]]=None)
     result = es.index(index=SOURCE_INDEX, document=source_info)
     return result['result']
 
-my_es = Elasticsearch()
-print(add_sources_to_db(my_es))
-
-
-
-
 
 def add_buoys_to_db(es: Elasticsearch, source_data: Dict[str, List[str]]=None):
     """
@@ -84,15 +79,44 @@ def add_buoys_to_db(es: Elasticsearch, source_data: Dict[str, List[str]]=None):
     else:
         source_info = source_data
 
+    buoy_ids = []
+    # get the flat list of buoy ids
+    for values in source_info.values():
+        buoy_ids.extend(values)
+
     buoy_info = {}
     # turn all of the buoy ids into data that was searchable from the web
-
-    # Add json properties to all classes in Nautical
-
+    for bid in buoy_ids:
+        buoy = create_buoy(bid)
+        buoy_info[bid] = buoy.present
 
     # index the information and add to elastic search database
-    result = es.index(index=SOURCE_INDEX, document=source_info)
+    result = es.index(index=BUOY_INDEX, document=buoy_info)
     return result['result']
 
+
+def _find_time_to_lookup_interval_minutes(current_minutes):
+    """
+    Find the time given the current minutes to the next lookup time (minutes).
+    The intervals are set for 5 minutes after the hour and 35 minutes after the
+    hour to provide NOAA with time to upload the data. NOAA is set to update the
+    data every half-hour, but research shows that the data is not always available
+    promptly at those intervals.
+    """
+    return abs(current_minutes - 65) % 30
+
+
+def find_wait_time():
+    """
+    Use the current time (minutes) passed the hour to determine the wait time until
+    the next expected period. This function should only be needed once as each interval
+    will be 30 minutes after the last lookup.
+    """
+    return _find_time_to_lookup_interval_minutes(datetime.now().minute)
+
+
+
+my_es = Elasticsearch()
+print(add_sources_to_db(my_es))
 
 # determine if sources already exist
