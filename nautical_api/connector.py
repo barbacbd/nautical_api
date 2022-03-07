@@ -11,11 +11,24 @@ from nautical.noaa.buoy.source import Source
 from elasticsearch import Elasticsearch
 from json import dumps
 from pprint import pprint
-from typing import List, Dict
+from typing import List, Dict, Union, Any
 from datetime import datetime
 
 SOURCE_INDEX = "source_index"
 BUOY_INDEX = "buoy_index"
+
+
+def jsonify_buoy_data(data: Union[List[BuoyData], BuoyData]):
+    """
+
+    """
+    def _jsonify(_data):
+        return {x: y for x, y in _data}
+
+    if isinstance(data, list):
+        return [_jsonify(bd) for bd in data]
+    else:
+        return _jsonify(data)
 
 
 def _pull_sources_wrapper() -> Dict[str, List[str]]:
