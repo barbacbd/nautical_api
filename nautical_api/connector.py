@@ -8,11 +8,11 @@ from nautical.io.sources import get_buoy_sources
 from nautical.io.buoy import create_buoy
 from nautical.noaa.buoy.buoy_data import BuoyData
 from nautical.noaa.buoy.source import Source
-from elasticsearch import Elasticsearch
 from json import dumps
-from pprint import pprint
 from typing import List, Dict, Union, Any
 from datetime import datetime
+from threading import Event, Timer, Lock
+
 
 SOURCE_INDEX = "source_index"
 BUOY_INDEX = "buoy_index"
@@ -31,105 +31,180 @@ def jsonify_buoy_data(data: Union[List[BuoyData], BuoyData]):
         return _jsonify(data)
 
 
-def _pull_sources_wrapper() -> Dict[str, List[str]]:
-    """
-    Pull all source data using the nautical library. The sources
-    will NOT include 'SHIPS'.
+class NauticalDatabase:
 
-    :return: Dictionary of source IDs with a value of the list of buoy IDs
-    associated with the source.
-    """
-    source_data = {}
 
-    sources = get_buoy_sources()
+    def __init__(self):
+        """
 
-    for id, source in sources.items():
-        if "ships" in str(id).lower():
-            # skip the ships
-            continue
+        """
+        self._sources: Dict[str, Any] = {}
+        self._buoys: Dict[str, Any] = {}
+        self._pull_lock = Lock()
+        self._retrieve_lock = Lock()
+
+        self._stop_event = Event()
+        self._stop_event.clear()  # force clear the event (if it's set we have a bg problem)
+        self._timer = None
+        
+    @staticmethod
+    def _find_time_to_lookup_interval_minutes(current_minutes):
+        """
+        Find the time given the current minutes to the next lookup time (minutes).
+        The intervals are set for 5 minutes after the hour and 35 minutes after the
+        hour to provide NOAA with time to upload the data. NOAA is set to update the
+        data every half-hour, but research shows that the data is not always available
+        promptly at those intervals.
+        """
+        return abs(current_minutes - 65) % 30
+
+    @staticmethod
+    def find_wait_time():
+        """
+        Use the current time (minutes) passed the hour to determine the wait time until
+        the next expected period. This function should only be needed once as each interval
+        will be 30 minutes after the last lookup.
+        """
+        return NauticalDatabase._find_time_to_lookup_interval_minutes(datetime.now().minute)
+
+    def stop(self):
+        """
+
+        """
+        log.debug("Stopping {}".format(self.__class__.__name__))
+        self._stop_event.set()
+
+        if self._timer is not None:
+            if self._timer.is_alive():
+                self._timer.cancel()
+
+            self._timer = None
+
+    def _run(self):
+        """
+
+        """
+        if self._stop_event.is_set():
+            log.debug("{} should be stopped, not executing ...".format(self.__class__.__name__))
+        else:
+            self._pull_all()
+            
+            # find the next time to run this function
+            num_seconds = NauticalDatabase.find_wait_time() * 60.0
+
+            self._timer = Timer(num_seconds, self._run)
+            self._timer.start()
+        
+    def run(self):
+        """
+        Start and run the Database that will pull the nautical information. The 
+        database should run asynchronously.
+        """
+        log.debug("Starting {}".format(self.__class__.__name__))
+        if self._stop_event.is_set():
+           log.warning("{} is already running ...".format(self.__class__.__name__))
+        else:
+            self._run()
+
+    def _pull_all(self):
+        """ 
+        Convenience function, see `_pull_sources` and `_pull_buoys` for more information.
+        """
+        self._pull_sources()
+        self._pull_buoys()
+    
+    def _pull_sources(self):
+        """
+        Pull all source data using the nautical library. The sources
+        will NOT include 'SHIPS'.        
+        """
+        log.debug("{} Updating sources".format(self.__class__.__name__))
+        source_data = {}
+        
+        sources = get_buoy_sources()
+        
+        for id, source in sources.items():
+            if "ships" in str(id).lower():
+                # skip the ships
+                continue
 
         source_data[str(id)] = [x.station for x in source.buoys.values()]
 
-    return source_data
+        with self._pull_lock:
+            log.debug("{} deleting current source data".format(self.__class__.__name__))
+            self._sources.clear()
+            self._sources = source_data
+            log.debug("{} Updated sources".format(self.__class__.__name__))
 
+    def _pull_buoys(self):
+        """
+        Pull all buoy information from the database and add the
+        information to the databsae.
+        """
+        log.debug("{} Updating buoys".format(self.__class__.__name__))
+        if not self._sources:
+            self._pull_sources
 
-def add_sources_to_db(es: Elasticsearch, source_data: Dict[str, List[str]]=None):
-    """
-    Add the source information to the elastic search database.
+        with self._pull_lock:
+            sources = copy(self._sources)
+            
+        buoy_ids = []
+        # get the flat list of buoy ids
+        for values in sources.values():
+            buoy_ids.extend(values)
 
-    :param es: Elasticsearch object
-    :param source_data: When provided, this is a dictionary of source ids with
-    the buoy ids associated with the sources. Please see _pull_sources_wrapper()
-    for more information.
+        buoy_info = {}
+        # turn all of the buoy ids into data that was searchable from the web
+        for bid in buoy_ids:
+            buoy = create_buoy(bid)
+            buoy_info[bid] = buoy.present
 
-    :return: The result of the elastic search index creation
-    """
-    if not source_data:
-        source_info = _pull_sources_wrapper()
-    else:
-        source_info = source_data
+        with self._pull_lock:
+            log.debug("{} deleting current buoy data".format(self.__class__.__name__))
+            self._buoys.clear()
+            self._buoys = buoy_info
+            log.debug("{} Updated buoys".format(self.__class__.__name__))
 
-    # index the information and add to elastic search database
-    result = es.index(index=SOURCE_INDEX, document=source_info)
-    return result['result']
+    def get_all_source_ids(self):
+        """
+        Get all of the IDs of the sources.
 
+        :return: List of all source IDs
+        """
+        with self._retrieve_lock:
+            return list(self._sources.keys())
+            
+    def get_source(self, source):
+        """
+        Get the source information for a specific source. The information will include the buoy ids 
+        that are a part of the source.
 
-def add_buoys_to_db(es: Elasticsearch, source_data: Dict[str, List[str]]=None):
-    """
-    Add the buoy information to the
+        :param source: ID of the source to retrieve the information from.
+        
+        :return: List of all buoy IDs in the source.
+        """
+        if source in self._sources:
+            with self._retrieve_lock:
+                return self._sources[source]
 
-    :param es: Elasticsearch object
-    :param source_data: When provided, this is expected to be the same dictionary
-    returned by _pull_sources_wrapper(). Please see the function for more information.
-    The intended use is to get the Buoy IDs contained inside and pull all
-    information for those buoys.
+    def get_all_buoy_ids(self):
+        """
+        Get all of the IDs of the buoys.
 
-    :return: The result of the elastic search index creation
-    """
+        :return: List of all buoy IDs
+        """
+        with self._retrieve_lock:
+            return list(self._buoys.keys())
 
-    if not source_data:
-        source_info = _pull_sources_wrapper()
-    else:
-        source_info = source_data
+    def get_buoy(self, buoy):
+        """
+        Get the buoy object information for a specific buoy. For more detail on the buoy, please
+        see `nautical.noaa.buoy.buoy_data`
 
-    buoy_ids = []
-    # get the flat list of buoy ids
-    for values in source_info.values():
-        buoy_ids.extend(values)
-
-    buoy_info = {}
-    # turn all of the buoy ids into data that was searchable from the web
-    for bid in buoy_ids:
-        buoy = create_buoy(bid)
-        buoy_info[bid] = buoy.present
-
-    # index the information and add to elastic search database
-    result = es.index(index=BUOY_INDEX, document=buoy_info)
-    return result['result']
-
-
-def _find_time_to_lookup_interval_minutes(current_minutes):
-    """
-    Find the time given the current minutes to the next lookup time (minutes).
-    The intervals are set for 5 minutes after the hour and 35 minutes after the
-    hour to provide NOAA with time to upload the data. NOAA is set to update the
-    data every half-hour, but research shows that the data is not always available
-    promptly at those intervals.
-    """
-    return abs(current_minutes - 65) % 30
-
-
-def find_wait_time():
-    """
-    Use the current time (minutes) passed the hour to determine the wait time until
-    the next expected period. This function should only be needed once as each interval
-    will be 30 minutes after the last lookup.
-    """
-    return _find_time_to_lookup_interval_minutes(datetime.now().minute)
-
-
-
-my_es = Elasticsearch()
-print(add_sources_to_db(my_es))
-
-# determine if sources already exist
+        :param buoy: ID of the buoy
+        
+        :return: nautical.noaa.buoy.BuoyData object
+        """
+        if buoy in self._buoys:
+            with self._retrieve_lock:
+                return self._buoys[buoy]

@@ -15,7 +15,8 @@ setup(
     python_requires='>=3.6, <4',
     install_requires=[
         'nautical',
-        'elasticsearch'
+        'flask',
+        'flask_restful'
     ],
     url='https://github.com/barbacbd/nautical_api',
     download_url='https://github.com/barbacbd/nautical_api/archive/v_001.tar.gz',
