@@ -16,7 +16,8 @@ setup(
     install_requires=[
         'nautical',
         'flask',
-        'flask_restful'
+        'flask_restful',
+        'singleton_decorator'
     ],
     url='https://github.com/barbacbd/nautical_api',
     download_url='https://github.com/barbacbd/nautical_api/archive/v_001.tar.gz',
@@ -28,7 +29,7 @@ setup(
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'NauticalDatabaseProvider=nautical_api.__main__:main'
+            'nautical_rest=nautical_api.__main__:main'
         ]
     },
 )

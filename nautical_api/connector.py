@@ -14,6 +14,8 @@ from datetime import datetime
 from threading import Event, Timer, Lock
 from uuid import uuid4
 from logging import getLogger
+from singleton_decorator import singleton
+from copy import copy
 
 
 log = getLogger()
@@ -33,7 +35,26 @@ def jsonify_buoy_data(data: Union[List[BuoyData], BuoyData]):
     else:
         return _jsonify(data)
 
+def _find_time_to_lookup_interval_minutes(current_minutes):
+    """
+    Find the time given the current minutes to the next lookup time (minutes).
+    The intervals are set for 5 minutes after the hour and 35 minutes after the
+    hour to provide NOAA with time to upload the data. NOAA is set to update the
+    data every half-hour, but research shows that the data is not always available
+    promptly at those intervals.
+    """
+    return abs(current_minutes - 65) % 30
 
+def find_wait_time():
+    """
+    Use the current time (minutes) passed the hour to determine the wait time until
+    the next expected period. This function should only be needed once as each interval
+    will be 30 minutes after the last lookup.
+    """
+    return _find_time_to_lookup_interval_minutes(datetime.now().minute)
+    
+    
+@singleton
 class NauticalDatabase:
 
 
@@ -53,26 +74,6 @@ class NauticalDatabase:
         # dict containing the callbacks associated with the hash 
         self._callbacks = {}
         self._callback_lock = Lock()
-        
-    @staticmethod
-    def _find_time_to_lookup_interval_minutes(current_minutes):
-        """
-        Find the time given the current minutes to the next lookup time (minutes).
-        The intervals are set for 5 minutes after the hour and 35 minutes after the
-        hour to provide NOAA with time to upload the data. NOAA is set to update the
-        data every half-hour, but research shows that the data is not always available
-        promptly at those intervals.
-        """
-        return abs(current_minutes - 65) % 30
-
-    @staticmethod
-    def find_wait_time():
-        """
-        Use the current time (minutes) passed the hour to determine the wait time until
-        the next expected period. This function should only be needed once as each interval
-        will be 30 minutes after the last lookup.
-        """
-        return NauticalDatabase._find_time_to_lookup_interval_minutes(datetime.now().minute)
 
     def subscribe(self, callback, hsh = str(uuid4())):
         """
@@ -130,7 +131,7 @@ class NauticalDatabase:
             self._pull_all()
             
             # find the next time to run this function
-            num_seconds = NauticalDatabase.find_wait_time() * 60.0
+            num_seconds = find_wait_time() * 60.0
 
             self._timer = Timer(num_seconds, self._run)
             self._timer.start()
@@ -151,7 +152,7 @@ class NauticalDatabase:
         Convenience function, see `_pull_sources` and `_pull_buoys` for more information.
         """
         self._pull_sources()
-        self._pull_buoys()
+        #self._pull_buoys()
     
     def _pull_sources(self):
         """
@@ -159,22 +160,16 @@ class NauticalDatabase:
         will NOT include 'SHIPS'.        
         """
         log.debug("{} Updating sources".format(self.__class__.__name__))
-        source_data = {}
-        
+
         sources = get_buoy_sources()
+        if "Ships" in sources:
+            sources.pop("Ships")
         
-        for id, source in sources.items():
-            if "ships" in str(id).lower():
-                # skip the ships
-                continue
-
-        source_data[str(id)] = [x.station for x in source.buoys.values()]
-
         with self._pull_lock:
             log.debug("{} deleting current source data".format(self.__class__.__name__))
             self._sources.clear()
-            self._sources = source_data
-            log.debug("{} Updated sources".format(self.__class__.__name__))
+            self._sources = sources
+            log.debug("{} Updated sources -> {}".format(self.__class__.__name__, self._sources.keys()))
 
     def _pull_buoys(self):
         """

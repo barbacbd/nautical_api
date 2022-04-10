@@ -2,6 +2,8 @@ from flask import Flask
 from flask_restful import Resource, Api
 from .connector import NauticalDatabase
 from logging import getLogger
+from threading import Lock
+from copy import copy
 
 
 log = getLogger()
@@ -9,13 +11,9 @@ log = getLogger()
 
 class _BaseNauticalResource(Resource):
 
-    def __init__(self, db):
-        """
-        :param db: The instance of the NauticalDatabase that is used by the Flask App
-        """
-        self.callback_id = None
-        if db is not None:
-            self.callback_id = db.subscribe(self.resource_update)
+    def __init__(self):
+        self.callback_id = NauticalDatabase().subscribe(self.resource_update)
+        self.resource_lock = Lock()
 
     def resource_update(self):
         """
@@ -25,25 +23,15 @@ class _BaseNauticalResource(Resource):
         raise NotImplementedError("{} does not implement resource_update".format(self.__class__.__name__))
 
 
-class _AllSourcesGetter(_BaseNauticalResource):
+class _AllSourcesGetter(Resource):
 
     """
     The class implements the ability or resource that will GET all sources.
     Each source is a contains the IDs of all buoys or stations reported as part of
     the group or source. Please see `nautical.noaa.buoy.source` for more information.
     """
-    
-    def __init__(self, db):
 
-        # make sure these exist before super() in the unlikely event that
-        # the update occurs immediately.
-        self._source_ids = []
-        
-        super().__init__(db)
-        
-        
-    def resource_update(self):
-        pass
+    __name__ = "sources"
     
     def get(self):
         """
@@ -53,7 +41,9 @@ class _AllSourcesGetter(_BaseNauticalResource):
         object will contain a list of ALL Ids of the sources that have been
         retrieved. 
         """
-        pass
+        sources = NauticalDatabase().get_all_source_ids()
+        # convert all elements to strings from the lxml type
+        return {"sources": [str(s) for s in sources]}
 
 class _AllBuoysGetter(Resource):
 
@@ -86,28 +76,27 @@ class NauticalApp(Flask):
         """
         super().__init__(import_name)
 
-        self._resources = []
+        self.resources = {}
         self._database = NauticalDatabase()
         self._saved_callback_id = self._database.subscribe(self._database_updated_callback)
 
         if self._saved_callback_id is None:
             log.error("Failed to register callback")
 
+        self._init_resources()
+
+        NauticalDatabase().run()
+
+    def _init_resources(self):
+        """
+
+        """
+        self.resources["/sources"] = _AllSourcesGetter()
+            
     def _database_updated_callback(self):
         """
         Callback function used to receive notifications that the database has been updated.
         Get all public information from the database and update
-        """
-        pass
-
-    @property
-    def resources(self):
-        """
-        Get all of the resources that have been generated.
-
-        See `flask_restful.Resource` for more information about resources.
-
-        :return: The currently available resources
         """
         pass
 
@@ -126,4 +115,7 @@ class NauticalRestApi(Api):
 
         :param app: The Flask Application Object
         """
+        super().__init__(app)
         
+        for link, resource in app.resources.items():
+            self.add_resource(copy(resource), link)
