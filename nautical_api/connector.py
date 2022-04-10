@@ -12,8 +12,11 @@ from json import dumps
 from typing import List, Dict, Union, Any
 from datetime import datetime
 from threading import Event, Timer, Lock
+from uuid import uuid4
+from logging import getLogger
 
 
+log = getLogger()
 SOURCE_INDEX = "source_index"
 BUOY_INDEX = "buoy_index"
 
@@ -46,6 +49,10 @@ class NauticalDatabase:
         self._stop_event = Event()
         self._stop_event.clear()  # force clear the event (if it's set we have a bg problem)
         self._timer = None
+
+        # dict containing the callbacks associated with the hash 
+        self._callbacks = {}
+        self._callback_lock = Lock()
         
     @staticmethod
     def _find_time_to_lookup_interval_minutes(current_minutes):
@@ -67,6 +74,39 @@ class NauticalDatabase:
         """
         return NauticalDatabase._find_time_to_lookup_interval_minutes(datetime.now().minute)
 
+    def subscribe(self, callback, hsh = str(uuid4())):
+        """
+        If hash (hsh) does not already exist in the updated callback, the callback will be 
+        added assuming it is a function. When an instance of this class updates the information
+        stored in the instance, then the registered callbacks will be triggered, notifying a
+        reciever to grab the new data.
+
+        :param callback: Callable function in the form of `func()`. There are no parameters necessary and 
+        nothing will be sent.
+        :param hsh: Hash or unique identifier that is used for this callback
+
+        :return: The hash or unique identifier that was used to save the callback function. In the
+        event that the callback could not be saved, the return value is None.
+        """
+        with self._callback_lock:
+            if hsh not in self._callbacks and callable(callback):
+                log.debug("{} adding callback with ID {}".format(self.__class__.__name__, hsh))
+                self._callbacks[hsh] = callback
+                return hsh
+        return None
+
+    def unsubscribe(self, hsh):
+        """
+        Remove a an existing subscription of the hsh matches an entry save in this instance.
+
+        :param hsh: hash or unique identifier of a saved callback
+        """
+        with self._callback_lock:
+            if hsh in self._callbacks:
+                log.debug("{} removing callback with ID {}".format(self.__class__.__name__, hsh))
+                self._callbacks.pop(hsh)
+        
+    
     def stop(self):
         """
 
