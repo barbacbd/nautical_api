@@ -45,6 +45,32 @@ class _AllSourcesGetter(Resource):
         # convert all elements to strings from the lxml type
         return {"sources": [str(s) for s in sources]}
 
+
+class _SpecificSourceGetter(Resource):
+
+    """
+    The class implements the ability or resource that will GET a specific sources.
+    Each source is a contains the IDs of all buoys or stations reported as part of
+    the group or source. Please see `nautical.noaa.buoy.source` for more information.
+    """
+
+    __name__ = "specific_source"
+    
+    def get(self, source_id):
+        """
+        Get the buoys grouped together by this source.
+
+        :return: JSON object in the format {"source_id": [] }, where the 
+        object will contain a list of ALL buoy Ids of the source that have been
+        retrieved. 
+        """
+        source = NauticalDatabase().get_source(source_id)
+
+        if source is not None:
+            return {source_id: [str(buoy.station) for buoy in source]}
+        else:
+            return {source_id: []}
+
 class _AllBuoysGetter(Resource):
 
     """ 
@@ -92,6 +118,7 @@ class NauticalApp(Flask):
 
         """
         self.resources["/sources"] = _AllSourcesGetter()
+        self.resources["/<string:source_id>"] = _SpecificSourceGetter()
             
     def _database_updated_callback(self):
         """
