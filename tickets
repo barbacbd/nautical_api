@@ -1,0 +1,26 @@
+1. Create the API
+
+A. >> Get all recent information under a buoy:
+    Return object of all recent information
+
+B. >> Can we run the function to pull all async in NauticalDB
+
+
+
+2. DOCUMENTATION Generation
+A. >> README
+B. >> Format code
+C. >> Sphinx
+
+3. Unit Tests
+
+4. Add in args to parse
+A. >> - check for env var for port even when port is set by user
+    DEFAULT_PORT = 5000
+    If port in args is different , stil use env var
+
+5. Batch thread the buoy information
+
+6. Change the name to Nautical Rest
+
+7. CI Work

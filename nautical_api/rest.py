@@ -80,6 +80,8 @@ class _AllBuoysGetter(Resource):
     more information.
     """
 
+    __name__ = "buoys"
+    
     def get(self):
         """
         Get the IDs of all buoys that have been retrievedfrom NOAA.
@@ -88,7 +90,8 @@ class _AllBuoysGetter(Resource):
         object will contain a list of ALL Ids of the buoys that have 
         been retrieved.
         """
-        pass
+        data = NauticalDatabase().get_all_buoy_ids()
+        return {"buoys": [b.station for b in data]}
         
 
 class NauticalApp(Flask):
@@ -118,7 +121,8 @@ class NauticalApp(Flask):
         """
         self.resources["/sources"] = _AllSourcesGetter()
         self.resources["/sources/<string:source_id>"] = _SpecificSourceGetter()
-            
+        self.resources["/buoys"] = _AllBuoysGetter()
+        
     def _database_updated_callback(self):
         """
         Callback function used to receive notifications that the database has been updated.

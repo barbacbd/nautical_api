@@ -16,6 +16,7 @@ from uuid import uuid4
 from logging import getLogger
 from singleton_decorator import singleton
 from copy import copy
+from urllib.error import HTTPError
 
 
 log = getLogger()
@@ -154,7 +155,7 @@ class NauticalDatabase:
         Convenience function, see `_pull_sources` and `_pull_buoys` for more information.
         """
         self._pull_sources()
-        #self._pull_buoys()
+        self._pull_buoys()
     
     def _pull_sources(self):
         """
@@ -189,18 +190,22 @@ class NauticalDatabase:
             self._pull_sources
 
         with self._pull_lock:
-            sources = copy(self._sources)
-            
+            sources = self._sources.values()
+
         buoy_ids = []
         # get the flat list of buoy ids
-        for values in sources.values():
-            buoy_ids.extend(values)
+        for s in sources:
+            buoy_ids.extend([b.station for b in list(s.buoys.values())])
 
         buoy_info = {}
         # turn all of the buoy ids into data that was searchable from the web
         for bid in buoy_ids:
-            buoy = create_buoy(bid)
-            buoy_info[bid] = buoy.present
+            try:
+                buoy = create_buoy(bid)
+                buoy_info[bid] = buoy.present
+            except HTTPError as e:
+                log.warning(e)
+                log.debug("Skipping {}, could not find data".format(bid))
 
         with self._pull_lock:
             log.debug("{} deleting current buoy data".format(self.__class__.__name__))
