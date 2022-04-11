@@ -67,6 +67,8 @@ class NauticalDatabase:
         self._pull_lock = Lock()
         self._retrieve_lock = Lock()
 
+        self._aliases = {}
+        
         self._stop_event = Event()
         self._stop_event.clear()  # force clear the event (if it's set we have a bg problem)
         self._timer = None
@@ -168,7 +170,13 @@ class NauticalDatabase:
         with self._pull_lock:
             log.debug("{} deleting current source data".format(self.__class__.__name__))
             self._sources.clear()
+            self._aliases.clear()
             self._sources = sources
+
+            for s in self._sources.keys():
+                alias = str(s).replace("/", "_").replace(" ", "_")
+                self._aliases[alias] = str(s)
+            
             log.debug("{} Updated sources -> {}".format(self.__class__.__name__, self._sources.keys()))
 
     def _pull_buoys(self):
@@ -208,6 +216,14 @@ class NauticalDatabase:
         """
         with self._retrieve_lock:
             return list(self._sources.keys())
+
+    def get_aliases(self):
+        """
+        :return: Aliases which include the endpoint name with the source original name
+        """
+        with self._retrieve_lock:
+            return copy(self._aliases)
+        
             
     def get_source(self, source):
         """

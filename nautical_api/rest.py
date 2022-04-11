@@ -41,10 +41,8 @@ class _AllSourcesGetter(Resource):
         object will contain a list of ALL Ids of the sources that have been
         retrieved. 
         """
-        sources = NauticalDatabase().get_all_source_ids()
-        # convert all elements to strings from the lxml type
-        return {"sources": [str(s) for s in sources]}
-
+        data = NauticalDatabase().get_aliases()        
+        return {"sources": [{"id": str(value), "endpoint": str(key)} for key, value in data.items()]}
 
 class _SpecificSourceGetter(Resource):
 
@@ -64,12 +62,13 @@ class _SpecificSourceGetter(Resource):
         object will contain a list of ALL buoy Ids of the source that have been
         retrieved. 
         """
-        source = NauticalDatabase().get_source(source_id)
-
-        if source is not None:
-            return {source_id: [str(buoy.station) for buoy in source]}
-        else:
+        data = NauticalDatabase().get_aliases()
+        if source_id not in data:
+            log.warning("Specific source queried, no matching data ...")
             return {source_id: []}
+        else:
+            s = NauticalDatabase().get_source(data[source_id])
+            return {str(s): [str(buoy.station) for buoy in s]}
 
 class _AllBuoysGetter(Resource):
 
@@ -118,7 +117,7 @@ class NauticalApp(Flask):
 
         """
         self.resources["/sources"] = _AllSourcesGetter()
-        self.resources["/<string:source_id>"] = _SpecificSourceGetter()
+        self.resources["/sources/<string:source_id>"] = _SpecificSourceGetter()
             
     def _database_updated_callback(self):
         """
