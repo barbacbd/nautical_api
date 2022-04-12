@@ -2,7 +2,7 @@ import argparse
 from signal import signal, SIGINT, SIGTERM
 from threading import Event
 from time import sleep
-from .rest import NauticalRestApi, NauticalApp
+from . import NauticalRestApi, NauticalApp
 from logging import getLogger, DEBUG, INFO, WARNING, CRITICAL, ERROR, StreamHandler, Formatter
 from sys import stdout
 

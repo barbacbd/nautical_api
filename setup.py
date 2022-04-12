@@ -24,12 +24,12 @@ setup(
     description='Scripts for the backend and database connection for the nautical API',
     author='Brent Barbachem',
     author_email='barbacbd@dukes.jmu.edu',
-    package_data={'': ['*.json', '*.mysql']},
+    package_data={'': ['*.json']},
     include_package_data=True,
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'nautical_rest=nautical_api.__main__:main'
+            'nautical_rest=nautical_api.rest.__main__:main'
         ]
     },
 )

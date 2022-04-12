@@ -17,6 +17,7 @@ from logging import getLogger
 from singleton_decorator import singleton
 from copy import copy
 from urllib.error import HTTPError
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 log = getLogger()
@@ -185,6 +186,9 @@ class NauticalDatabase:
         Pull all buoy information from the database and add the
         information to the databsae.
         """
+
+
+        
         log.debug("{} Updating buoys".format(self.__class__.__name__))
         if not self._sources:
             self._pull_sources
@@ -195,23 +199,26 @@ class NauticalDatabase:
         buoy_ids = []
         # get the flat list of buoy ids
         for s in sources:
-            buoy_ids.extend([b.station for b in list(s.buoys.values())])
+            buoy_ids.extend([str(b.station) for b in list(s.buoys.values())])
 
-        buoy_info = {}
-        # turn all of the buoy ids into data that was searchable from the web
-        for bid in buoy_ids:
-            try:
-                buoy = create_buoy(bid)
-                buoy_info[bid] = buoy.present
-            except HTTPError as e:
-                log.warning(e)
-                log.debug("Skipping {}, could not find data".format(bid))
+        # Batch thread the buoy queries
+        """
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            futr_data = {executor.submit(create_buoy_wrapper, bid): bid for bid in buoy_ids}
+
+            for f in as_completed(futr_data):
+                with self._pull_lock:
+                    if f.result()[1] is None:
+                        log.debug("Skipping {}, could not find data".format(f.result()[0]))
+                    else:
+                        self._buoys[f.result()[0]] = f.result()[1]
+        """
 
         with self._pull_lock:
-            log.debug("{} deleting current buoy data".format(self.__class__.__name__))
-            self._buoys.clear()
-            self._buoys = buoy_info
-            log.debug("{} Updated buoys".format(self.__class__.__name__))
+            # this will clear the dict, this will cause us to loose cache which is intended
+            self._buoys = dict.fromkeys(buoy_ids, None)
+        
+        log.debug("{} Updated buoys".format(self.__class__.__name__))
 
     def get_all_source_ids(self):
         """
@@ -228,7 +235,6 @@ class NauticalDatabase:
         """
         with self._retrieve_lock:
             return copy(self._aliases)
-        
             
     def get_source(self, source):
         """
@@ -263,4 +269,15 @@ class NauticalDatabase:
         """
         if buoy in self._buoys:
             with self._retrieve_lock:
+                if self._buoys[buoy] is None:
+
+                    try:
+                        b = create_buoy(buoy)
+                        self._buoys[buoy] = b.present
+                    except HTTPError as e:
+                        log.warning(e)
+
+                # This will either be None, a buoy (which could be cached
+                # if looked up more than once in a time period)
                 return self._buoys[buoy]
+        return None  # Buoy does not exist

@@ -24,3 +24,7 @@ A. >> - check for env var for port even when port is set by user
 6. Change the name to Nautical Rest
 
 7. CI Work
+
+
+8. Lookup will constantly lookup for the entire minute until it needs to stop
+
