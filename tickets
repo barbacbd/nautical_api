@@ -6,17 +6,11 @@ C. >> Sphinx
 
 3. Unit Tests
 
-4. Add in args to parse
-A. >> - check for env var for port even when port is set by user
-    DEFAULT_PORT = 5000
-    If port in args is different , stil use env var
-
-5. Batch thread the buoy information
-
-6. Change the name to Nautical Rest
-
 7. CI Work
-
 
 8. Lookup will constantly lookup for the entire minute until it needs to stop
 
+9. Different APIs:
+   - graphql
+   - falcor
+   - gRPC
