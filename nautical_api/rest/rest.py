@@ -46,11 +46,11 @@ class NauticalApp(Flask):
         """
         pass
 
-    def run(self, debug=False):
+    def run(self, debug=False, port=5000, host="localhost"):
         """
         Override of the run method from the base class.
         """
-        super().run(debug=debug)
+        super().run(debug=debug, port=port)
 
         
 class NauticalRestApi(Api):

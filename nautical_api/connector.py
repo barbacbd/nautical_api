@@ -30,7 +30,13 @@ def jsonify_buoy_data(data: Union[List[BuoyData], BuoyData]):
 
     """
     def _jsonify(_data):
-        return {x: y for x, y in _data}
+        output = {}
+        for x, y in _data:
+            if isinstance(y, (int, float, str)):
+                output[x] = y
+            else:
+                output[x] = str(y)
+        return output
 
     if isinstance(data, list):
         return [_jsonify(bd) for bd in data]

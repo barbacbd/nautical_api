@@ -1,11 +1,3 @@
-1. Create the API
-
-A. >> Get all recent information under a buoy:
-    Return object of all recent information
-
-B. >> Can we run the function to pull all async in NauticalDB
-
-
 
 2. DOCUMENTATION Generation
 A. >> README

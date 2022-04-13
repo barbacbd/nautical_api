@@ -5,6 +5,8 @@ from time import sleep
 from . import NauticalRestApi, NauticalApp
 from logging import getLogger, DEBUG, INFO, WARNING, CRITICAL, ERROR, StreamHandler, Formatter
 from sys import stdout
+from os import environ
+
 
 h = StreamHandler(stdout)
 # provide a bit more detail on output                                                                                                                                                                   
@@ -23,6 +25,8 @@ def main():
         default="WARNING",
         choices=["ERROR", "CRITICAL", "INFO", "DEBUG", "WARNING"]
     )
+    parser.add_argument('-p', '--port', help='Port where the app is executed.', default=5000)
+    parser.add_argument('-a', '--host', help='Host where the app is executed.', default="localhost")
 
     args = parser.parse_args()
 
@@ -44,7 +48,10 @@ def main():
     signal(SIGINT, _stop)
     signal(SIGTERM, _stop)
 
-    app.run()
+
+    port = environ.get("NAUTICAL_REST_API_PORT", args.port)
+    
+    app.run(debug=args.log_level=="DEBUG", host=args.host, port=port)
 
     while not e.is_set():
         sleep(1.0)
