@@ -43,23 +43,17 @@ def jsonify_buoy_data(data: Union[List[BuoyData], BuoyData]):
     else:
         return _jsonify(data)
 
-def _find_time_to_lookup_interval_minutes(current_minutes):
-    """
-    Find the time given the current minutes to the next lookup time (minutes).
-    The intervals are set for 5 minutes after the hour and 35 minutes after the
-    hour to provide NOAA with time to upload the data. NOAA is set to update the
-    data every half-hour, but research shows that the data is not always available
-    promptly at those intervals.
-    """
-    return abs(current_minutes - 65) % 30
-
+    
 def find_wait_time():
     """
     Use the current time (minutes) passed the hour to determine the wait time until
     the next expected period. This function should only be needed once as each interval
     will be 30 minutes after the last lookup.
     """
-    return _find_time_to_lookup_interval_minutes(datetime.now().minute)
+    m = abs(int(datetime.now().minute)  65) % 30
+    if m == 0:
+        return 30
+    return m
     
     
 @singleton
