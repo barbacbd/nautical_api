@@ -1,6 +1,6 @@
 # NAUTICAL API
 
-The project contains the APIs that can be used to expose the [nautical library](github.com/barbacbd/nautical). The goal
+The project contains the APIs that can be used to expose the [nautical library](https://github.com/barbacbd/nautical). The goal
 of this project is to provide a convenient method for users to interact with the nautical functions.
 
 
