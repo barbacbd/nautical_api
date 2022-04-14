@@ -44,13 +44,21 @@ def jsonify_buoy_data(data: Union[List[BuoyData], BuoyData]):
         return _jsonify(data)
 
     
-def find_wait_time():
+def find_wait_time(t=None):
     """
     Use the current time (minutes) passed the hour to determine the wait time until
     the next expected period. This function should only be needed once as each interval
     will be 30 minutes after the last lookup.
+
+    :param t: Time in minutes currently past the hour, When `None` use datatime
     """
-    m = abs(int(datetime.now().minute)  65) % 30
+    
+    if t is None:
+        _t = int(datetime.now().minute)
+    else:
+        _t = t
+    
+    m = abs(int(_t) - 65) % 30
     if m == 0:
         return 30
     return m
@@ -105,11 +113,15 @@ class NauticalDatabase:
         Remove a an existing subscription of the hsh matches an entry save in this instance.
 
         :param hsh: hash or unique identifier of a saved callback
+        :return: True when the callback was successfully removed
         """
         with self._callback_lock:
             if hsh in self._callbacks:
                 log.debug("{} removing callback with ID {}".format(self.__class__.__name__, hsh))
                 self._callbacks.pop(hsh)
+                return True
+            
+        return False
         
     
     def stop(self):
@@ -185,10 +197,7 @@ class NauticalDatabase:
         """
         Pull all buoy information from the database and add the
         information to the databsae.
-        """
-
-
-        
+        """        
         log.debug("{} Updating buoys".format(self.__class__.__name__))
         if not self._sources:
             self._pull_sources
@@ -200,19 +209,6 @@ class NauticalDatabase:
         # get the flat list of buoy ids
         for s in sources:
             buoy_ids.extend([str(b.station) for b in list(s.buoys.values())])
-
-        # Batch thread the buoy queries
-        """
-        with ThreadPoolExecutor(max_workers=6) as executor:
-            futr_data = {executor.submit(create_buoy_wrapper, bid): bid for bid in buoy_ids}
-
-            for f in as_completed(futr_data):
-                with self._pull_lock:
-                    if f.result()[1] is None:
-                        log.debug("Skipping {}, could not find data".format(f.result()[0]))
-                    else:
-                        self._buoys[f.result()[0]] = f.result()[1]
-        """
 
         with self._pull_lock:
             # this will clear the dict, this will cause us to loose cache which is intended

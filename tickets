@@ -8,8 +8,6 @@ C. >> Sphinx
 
 7. CI Work
 
-8. Lookup will constantly lookup for the entire minute until it needs to stop
-
 9. Different APIs:
    - graphql
    - falcor

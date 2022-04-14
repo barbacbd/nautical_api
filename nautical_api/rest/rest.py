@@ -39,13 +39,6 @@ class NauticalApp(Flask):
         self.resources["/buoys"] = AllBuoysGetter()
         self.resources["/buoys/<string:buoy_id>"] = SpecificBuoyGetter()
         
-    def _database_updated_callback(self):
-        """
-        Callback function used to receive notifications that the database has been updated.
-        Get all public information from the database and update
-        """
-        pass
-
     def run(self, debug=False, port=5000, host="localhost"):
         """
         Override of the run method from the base class.
