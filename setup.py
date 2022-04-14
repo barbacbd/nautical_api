@@ -17,7 +17,8 @@ setup(
         'nautical',
         'flask',
         'flask_restful',
-        'singleton_decorator'
+        'singleton_decorator',
+        'waitress'
     ],
     url='https://github.com/barbacbd/nautical_api',
     download_url='https://github.com/barbacbd/nautical_api/archive/v_001.tar.gz',

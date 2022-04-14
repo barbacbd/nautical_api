@@ -42,20 +42,18 @@ def main():
     app = NauticalApp()
     api = NauticalRestApi(app)
 
-    def _stop(*_):
-        e.set()
-
-    signal(SIGINT, _stop)
-    signal(SIGTERM, _stop)
-
-
     port = environ.get("NAUTICAL_REST_API_PORT", args.port)
-    
-    app.run(debug=args.log_level=="DEBUG", host=args.host, port=port)
 
-    while not e.is_set():
-        sleep(1.0)
+    if args.log_level == "DEBUG":
+        # this is redundant, but providing an extra level for other app uses
+        app.run(debug=args.log_level=="DEBUG", host=args.host, port=port)
+    else:
+        from waitress import serve
 
+        # name localhost is not support, causing OSError with sockets. use 0.0.0.0 in
+        # place of localhost
+        host = args.host if args.host.lower() != "localhost" else "0.0.0.0"
+        serve(app, host=host, port=args.port)
 
 if __name__ == '__main__':
     main()
