@@ -1,6 +1,6 @@
 # NAUTICAL API 
 
-[![Build](https://github.com/barbacbd/nautical_api/actions/workflows/python-app.yml/badge.svg?branch=main&event=push)](https://github.com/barbacbd/nautical_api/actions/workflows/python-app.yml)
+[![Build](https://github.com/barbacbd/nautical_api/workflows/Build/badge.svg?branch=main&event=push)](https://github.com/barbacbd/nautical_api/actions/workflows/python-app.yml)
 [![Pages](https://github.com/barbacbd/nautical_api/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/barbacbd/nautical_api/actions/workflows/pages/pages-build-deployment)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/barbacbd/nautical_api/pulse/commit-activity)
 [![GitHub latest commit](https://img.shields.io/github/last-commit/barbacbd/nautical_api)](https://github.com/barbacbd/nautical_api/commit/)
