@@ -2,10 +2,13 @@ import argparse
 from signal import signal, SIGINT, SIGTERM
 from threading import Event
 from time import sleep
-from . import NauticalRestApi, NauticalApp
 from logging import getLogger, DEBUG, INFO, WARNING, CRITICAL, ERROR, StreamHandler, Formatter
 from sys import stdout
 from os import environ
+from flask import Flask
+from flask_restful import Api
+from .resources import *
+from ..connector import NauticalDatabase
 
 
 h = StreamHandler(stdout)
@@ -38,9 +41,28 @@ def main():
         "DEBUG": DEBUG
     }.get(args.log_level, WARNING))
 
-    e = Event()
-    app = NauticalApp()
-    api = NauticalRestApi(app)
+    def handle_shutdown(*_, has_shutdown=False):
+        log.debug("Stopping database ...")
+        NauticalDatabase().stop()
+        log.debug("Exiting ...")
+        # Ensure that the flask app is shutdown, this is the call that will
+        # ultimately cause the reentrant
+        exit(0)
+            
+        
+    # only handle the Ctrl-C 
+    signal(SIGINT, handle_shutdown)
+    
+    # Start the database that will run in the background
+    NauticalDatabase().run()
+    app = Flask("nautical_rest_api")
+    api = Api(app)
+
+    # Add all resources to the api
+    api.add_resource(AllSourcesGetter(), "/sources")
+    api.add_resource(SpecificSourceGetter(), "/sources/<string:source_id>")
+    api.add_resource(AllBuoysGetter(), "/buoys")
+    api.add_resource(SpecificBuoyGetter(), "/buoys/<string:buoy_id>")
 
     port = environ.get("NAUTICAL_REST_API_PORT", args.port)
 

@@ -103,5 +103,8 @@ class SpecificBuoyGetter(Resource):
         been retrieved.
         """
         data = NauticalDatabase().get_buoy(buoy_id)
-        return {buoy_id: jsonify_buoy_data(data)}
+        if data is None:
+            return {buoy_id: {}}
+        else:
+            return {buoy_id: jsonify_buoy_data(data)}
 

@@ -40,7 +40,7 @@ def jsonify_buoy_data(data: Union[List[BuoyData], BuoyData]):
 
     if isinstance(data, list):
         return [_jsonify(bd) for bd in data]
-    else:
+    elif data is not None:
         return _jsonify(data)
 
     

@@ -143,7 +143,7 @@ def test_db_get_all_buoys_empty():
     assert len(NauticalDatabase().get_all_buoy_ids()) == 0
 
     
-@pytest.mark.run(order=12)
+@pytest.mark.run(order=16)
 def test_start_db():
     """
     Start the database, and assuming that no errors occur, the simple test will
@@ -153,7 +153,7 @@ def test_start_db():
     assert True
 
 
-@pytest.mark.run(order=13)
+@pytest.mark.run(order=17)
 def test_db_get_all_sources():
     """
     The database has been started, and the data should be saved internally.
@@ -165,7 +165,7 @@ def test_db_get_all_sources():
     assert len(sources) > 0
 
 
-@pytest.mark.run(order=14)
+@pytest.mark.run(order=18)
 def test_db_get_source():
     """
     Making a similar call to the one in the test for get all sources, 
@@ -183,7 +183,7 @@ def test_db_get_source():
         assert True == False
 
         
-@pytest.mark.run(order=15)
+@pytest.mark.run(order=19)
 def test_db_get_all_buoys():
     """
     The database has been started, and the data should be saved internally.
@@ -195,7 +195,7 @@ def test_db_get_all_buoys():
     assert len(buoys) > 0
 
 
-@pytest.mark.run(order=16)
+@pytest.mark.run(order=20)
 def test_db_get_buoy():
     """
     Making a similar call to the one in the test for get all buoys, 
@@ -213,7 +213,7 @@ def test_db_get_buoy():
         assert True == False
 
 
-@pytest.mark.run(order=17)
+@pytest.mark.run(order=21)
 def test_db_get_aliases():
     """
     The aliases will ALWAYS be generated for the sources. As long as the sources exist
@@ -222,7 +222,7 @@ def test_db_get_aliases():
     assert len(NauticalDatabase().get_aliases()) > 0
 
 
-@pytest.mark.run(order=18)
+@pytest.mark.run(order=24)
 def test_db_stop():
     """
     Stop the database to kill the threads and ensure that stop works. If the

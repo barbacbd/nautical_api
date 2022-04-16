@@ -1,2 +1,5 @@
 pytest
 pytest-ordering
+requests
+coverage
+pytest-cov
