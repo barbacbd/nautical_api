@@ -8,7 +8,7 @@ from os import environ
 from flask import Flask
 from flask_restful import Api
 from .resources import *
-from ..connector import NauticalDatabase
+from .connector import NauticalDatabase
 
 
 h = StreamHandler(stdout)

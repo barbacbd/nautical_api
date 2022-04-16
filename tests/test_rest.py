@@ -1,5 +1,5 @@
 import requests
-from nautical_api.rest.resources import *
+from nautical_api.resources import *
 from nautical_api.connector import NauticalDatabase
 import pytest
 from flask import Flask

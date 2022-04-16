@@ -1,5 +1,5 @@
 from flask_restful import Resource
-from ..connector import NauticalDatabase, jsonify_buoy_data
+from .connector import NauticalDatabase, jsonify_buoy_data
 from logging import getLogger
 from threading import Lock
 from copy import copy
