@@ -9,7 +9,8 @@ from flask_restful import Api
 @pytest.mark.run(order=12)
 def test_all_sources_empty():
     """
-
+    Database has not been started, so the resource will have access to 
+    the database which holds nothing.
     """
     x = AllSourcesGetter()
     resp = x.get()
@@ -22,7 +23,8 @@ def test_all_sources_empty():
 @pytest.mark.run(order=13)
 def test_specific_sources_empty():
     """
-
+    Database has not been started, so the resource will have access to 
+    the database which holds nothing.
     """
     source_id = "Test_source_id"
     
@@ -36,7 +38,8 @@ def test_specific_sources_empty():
 @pytest.mark.run(order=14)
 def test_all_buoys_empty():
     """
-
+    Database has not been started, so the resource will have access to 
+    the database which holds nothing.
     """
     x = AllBuoysGetter()
     resp = x.get()
@@ -49,6 +52,8 @@ def test_all_buoys_empty():
 @pytest.mark.run(order=15)
 def test_specific_buoys_empty():
     """
+    Database has not been started, so the resource will have access to 
+    the database which holds nothing.
     """
     buoy_id = "Test_buoy_id"
     
@@ -62,7 +67,9 @@ def test_specific_buoys_empty():
 @pytest.mark.run(order=22)
 def test_sources_live():
     """
-    
+    NauticalDatabase has been started, so the resource will have access to all
+    sources. Once the sources are pulled, select the first one and get all of
+    the information for that source.
     """
     x = AllSourcesGetter()
     resp = x.get()
@@ -83,7 +90,9 @@ def test_sources_live():
 @pytest.mark.run(order=23)
 def test_buoys_live():
     """
-    
+    NauticalDatabase has been started, so the resource will have access to all
+    buoys. Once the buoys are pulled, select the first one and get all of the 
+    information for that buoy.
     """
     x = AllBuoysGetter()
     resp = x.get()
