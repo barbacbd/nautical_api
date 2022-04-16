@@ -1,21 +1,19 @@
 # NAUTICAL API
 
-The project contains the APIs that can be used to expose the [nautical library](https://github.com/barbacbd/nautical). The goal
+The project contains the API that can be used to expose the [nautical library](https://github.com/barbacbd/nautical). The goal
 of this project is to provide a convenient method for users to interact with the nautical functions.
 
 
-# APIs
-
-## REST
+# REST
 
 The REST API utilizes `flask` to create a restful web service. When the package is installed, the
 rest api application is installed as `nautical_rest`. The user can change the log level, port, and host.
 
-### Endpoints
+## Endpoints
 
 The api provides four endpoints.
 
-#### Sources
+### Sources
 
 The `sources` endpoint will provide a list of objects. Each object contains the name of the source as
 well as the endpoint to gather information about the source.
@@ -37,7 +35,7 @@ would return similar results to:
 }
 ```
 
-#### Specific Sources
+### Specific Sources
 
 Each source that can be obtained from the output above, will also be an individual endpoint. This group of
 endpoints are grouped together and internally termed the specific source endpoints.
@@ -58,7 +56,7 @@ ids that are grouped together by the source.
 ```
 
 
-#### Buoys
+### Buoys
 
 The `buoys` endpoint will provide a list of all buoy ids.
 
@@ -78,7 +76,7 @@ would return similar results to:
 }
 ```
 
-#### Specific Buoys
+### Specific Buoys
 
 Each buoy that can be obtained from the output above, will also be an individual endpoint. This group of
 endpoints are grouped together and internally termed the specific buoy endpoints.
@@ -95,4 +93,33 @@ Would return something similar to:
        ... buoy data ...
     }
 }
+```
+
+
+# Generating Documentation
+
+Sphinx is used to generate the documentation for this project. Only documentation on the `main` branch will be published to the [github pages](https://barbacbd.github.io/nautical_api/html/index.html).
+
+To generate documentation ensure that there is a `Makefile`, `make.bat`, `conf.py`, and `index.rst` file in the base project directory. The `conf.py` file should be updated each time that a project
+version changes. The `index.rst` will _NOT_ change, but the rst files in rst_docs _should_ be (re)generated each time that new functionality or documentation change. Run the following command from
+the project home directory.
+
+```bash
+sphinx-apidoc -f -o rst_docs nautical_api
+```
+
+If the documentation is already generated, then the generator must be careful not to remove the extra files in `./docs`. There is a `.nojekyll` file (empty) that exists, please be sure that this file
+remains when performing a `make clean`. Similarly there is an extra `index.html` in the same directory. If these files are removed, revert or reset the change so that they persist.
+
+From the project home run the command `make html` and the required html files will be generated in `docs`. Add the changes and commit them to provide the updated documentation.
+
+```bash
+# clean all of the docs
+# leaving the index and nojekyll files
+make clean
+
+# regenerate the documents 
+make html
+
+git add docs/*
 ```
