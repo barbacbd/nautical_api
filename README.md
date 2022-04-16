@@ -1,7 +1,7 @@
-# NAUTICAL API ![build workflow](https://github.com/barbacbd/nautical_api/actions/workflows/python-app.yml/badge.svg) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
+# NAUTICAL API ![build workflow](https://github.com/barbacbd/nautical_api/actions/workflows/python-app.yml/badge.svg?event=push) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/barbacbd/nautical_api/pulse/commit-activity)
-[![GitHub latest commit](https://badgen.net/github/last-commit/barbacbd/nautical_api)](https://github.com/barbacbd/nautical_api/commit/)
+[![GitHub latest commit](https://img.shields.io/github/last-commit/barbacbd/nautical_api)](https://github.com/barbacbd/nautical_api/commit/)
 
 [![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)
 [![macOS](https://svgshare.com/i/ZjP.svg)](https://svgshare.com/i/ZjP.svg)
