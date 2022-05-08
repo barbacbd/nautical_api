@@ -22,9 +22,7 @@ class AllSourcesGetter(Resource):
         """
         Get the IDs of all sources that have been retrieved from NOAA.
                                                                      
-        :return: JSON object in the format {"sources": [] }, where the
-        object will contain a list of ALL Ids of the sources that have been
-        retrieved.
+        :return: JSON object including all sources and their endpoints
         """
         data = NauticalDatabase().get_aliases()
         return {"sources": [{"id": str(value), "endpoint": str(key)} for key, value in data.items()]}
@@ -43,10 +41,9 @@ class SpecificSourceGetter(Resource):
     def get(self, source_id):
         """
         Get the buoys grouped together by this source.
-
-        :return: JSON object in the format {"source_id": [] }, where the
-        object will contain a list of ALL buoy Ids of the source that have been
-        retrieved.
+        
+        :param source_id: Source to retrieve the information about.
+        :return: JSON object including all sources.
         """
         data = NauticalDatabase().get_aliases()
         if source_id not in data:
@@ -72,9 +69,7 @@ class AllBuoysGetter(Resource):
         """
         Get the IDs of all buoys that have been retrievedfrom NOAA.
 
-        :return: JSON object in the format {"buoys": [] }, where the
-        object will contain a list of ALL Ids of the buoys that have
-        been retrieved.
+        :return: JSON object including all buoy ids.
         """
         data = NauticalDatabase().get_all_buoy_ids()
         return {"buoys": [bid for bid in data]}
@@ -96,11 +91,8 @@ class SpecificBuoyGetter(Resource):
         """
         Get the IDs of all buoys that have been retrievedfrom NOAA.
 
-        :param buoy_id
-
-        :return: JSON object in the format {"buoys": [] }, where the
-        object will contain a list of ALL Ids of the buoys that have
-        been retrieved.
+        :param buoy_id: ID of the buoy to retrieve information about.
+        :return: JSON object with all buoy information for a buoy
         """
         data = NauticalDatabase().get_buoy(buoy_id)
         if data is None:
