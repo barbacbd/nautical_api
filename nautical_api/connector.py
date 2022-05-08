@@ -66,12 +66,11 @@ def find_wait_time(t=None):
     
 @singleton
 class NauticalDatabase:
-
+    """Singleton class that will hold the current nautical
+    information retrieved through the nautical library.
+    """
 
     def __init__(self):
-        """
-
-        """
         self._sources: Dict[str, Any] = {}
         self._buoys: Dict[str, Any] = {}
         self._pull_lock = Lock()
@@ -94,12 +93,9 @@ class NauticalDatabase:
         stored in the instance, then the registered callbacks will be triggered, notifying a
         reciever to grab the new data.
 
-        :param callback: Callable function in the form of `func()`. There are no parameters necessary and 
-        nothing will be sent.
+        :param callback: Callable function in the form of `func()`.
         :param hsh: Hash or unique identifier that is used for this callback
-
-        :return: The hash or unique identifier that was used to save the callback function. In the
-        event that the callback could not be saved, the return value is None.
+        :return: The hash or unique identifier for the callback, None on failure.
         """
         with self._callback_lock:
             if hsh not in self._callbacks and callable(callback):
@@ -126,7 +122,7 @@ class NauticalDatabase:
     
     def stop(self):
         """
-
+        Stopp the execution of the singleton
         """
         log.debug("Stopping {}".format(self.__class__.__name__))
         self._stop_event.set()
@@ -139,7 +135,7 @@ class NauticalDatabase:
 
     def _run(self):
         """
-
+        Internal execution interval for the singleton
         """
         if self._stop_event.is_set():
             log.debug("{} should be stopped, not executing ...".format(self.__class__.__name__))
@@ -173,7 +169,7 @@ class NauticalDatabase:
     def _pull_sources(self):
         """
         Pull all source data using the nautical library. The sources
-        will NOT include 'SHIPS'.        
+        will NOT include 'SHIPS'.
         """
         log.debug("{} Updating sources".format(self.__class__.__name__))
 
@@ -227,6 +223,10 @@ class NauticalDatabase:
 
     def get_aliases(self):
         """
+        Get the aliases for the source names. Source names are not in a format that can
+        be used for urls, so the aliases are used to match the actual source name to the
+        external URL.
+
         :return: Aliases which include the endpoint name with the source original name
         """
         with self._retrieve_lock:
@@ -237,8 +237,7 @@ class NauticalDatabase:
         Get the source information for a specific source. The information will include the buoy ids 
         that are a part of the source.
 
-        :param source: ID of the source to retrieve the information from.
-        
+        :param source: ID of the source to retrieve the information from.        
         :return: List of all buoy IDs in the source.
         """
         if source in self._sources:
@@ -260,7 +259,6 @@ class NauticalDatabase:
         see `nautical.noaa.buoy.buoy_data`
 
         :param buoy: ID of the buoy
-        
         :return: nautical.noaa.buoy.BuoyData object
         """
         if buoy in self._buoys:
