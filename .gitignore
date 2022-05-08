@@ -1,3 +1,5 @@
 .idea/
 
 *__pycache__/
+autodoc_ext_artifacts.yaml
+.autodoc_ext_artifacts.yaml
